@@ -118,3 +118,46 @@ func DeleteProductById() http.Handler {
 		})
 	})
 }
+
+func UpdateProductById() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		idstring := r.PathValue("id")
+		id, err := strconv.Atoi(idstring)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(
+				map[string]string{
+					"error": "invalid id",
+				},
+			)
+			return
+		}
+
+		var p model.Product
+		err = json.NewDecoder(r.Body).Decode(&p)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(
+				map[string]string{
+					"error": err.Error(),
+				},
+			)
+			return
+		}
+
+		for i := range products {
+			if products[i].ID == id {
+				p.ID = id
+				products[i] = p
+				w.WriteHeader(http.StatusOK)
+				json.NewEncoder(w).Encode(p)
+				return
+			}
+		}
+
+		w.WriteHeader(http.StatusNotFound)
+		json.NewEncoder(w).Encode(map[string]string{
+			"error": "product not found",
+		})
+	})
+}
