@@ -11,6 +11,7 @@ import (
 func main() {
 	mux := http.NewServeMux()
 
+	// healthcheck
 	mux.Handle("GET /healthz", handler.Healthz())
 
 	// products
@@ -26,6 +27,9 @@ func main() {
 	mux.Handle("GET /api/categories/{id}", handler.GetCategoryById())
 	mux.Handle("DELETE /api/categories/{id}", handler.DeleteCategoryById())
 	mux.Handle("PUT /api/categories/{id}", handler.UpdateCategoryById())
+
+	// default route
+	mux.Handle("/", handler.DefaultHandler())
 
 	log.Println("running server on port 8080..")
 	err := http.ListenAndServe(":8080", middleware.SimpleLogger(middleware.DefaultHeaders(mux)))
