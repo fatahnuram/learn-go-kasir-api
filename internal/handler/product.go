@@ -64,3 +64,25 @@ func GetProductById() http.Handler {
 		})
 	})
 }
+
+func CreateProduct() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var p model.Product
+		err := json.NewDecoder(r.Body).Decode(&p)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(
+				map[string]string{
+					"error": err.Error(),
+				},
+			)
+			return
+		}
+
+		p.ID = len(products) + 1
+		products = append(products, p)
+
+		w.WriteHeader(http.StatusCreated)
+		json.NewEncoder(w).Encode(p)
+	})
+}

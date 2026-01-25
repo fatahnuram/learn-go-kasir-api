@@ -16,6 +16,7 @@ func main() {
 	// products
 	mux.Handle("GET /api/products", handler.ListProducts())
 	mux.Handle("GET /api/products/{id}", handler.GetProductById())
+	mux.Handle("POST /api/products", handler.CreateProduct())
 
 	log.Println("running server on port 8080..")
 	err := http.ListenAndServe(":8080", middleware.SimpleLogger(middleware.DefaultHeaders(mux)))
