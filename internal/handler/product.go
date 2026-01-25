@@ -86,3 +86,35 @@ func CreateProduct() http.Handler {
 		json.NewEncoder(w).Encode(p)
 	})
 }
+
+func DeleteProductById() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		idstring := r.PathValue("id")
+		id, err := strconv.Atoi(idstring)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(
+				map[string]string{
+					"error": "invalid id",
+				},
+			)
+			return
+		}
+
+		for i, p := range products {
+			if p.ID == id {
+				products = append(products[:i], products[i+1:]...)
+				w.WriteHeader(http.StatusOK)
+				json.NewEncoder(w).Encode(map[string]string{
+					"msg": "product deleted successfully",
+				})
+				return
+			}
+		}
+
+		w.WriteHeader(http.StatusNotFound)
+		json.NewEncoder(w).Encode(map[string]string{
+			"error": "product not found",
+		})
+	})
+}
