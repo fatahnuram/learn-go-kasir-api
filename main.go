@@ -20,6 +20,13 @@ func main() {
 	mux.Handle("DELETE /api/products/{id}", handler.DeleteProductById())
 	mux.Handle("PUT /api/products/{id}", handler.UpdateProductById())
 
+	// categories
+	mux.Handle("GET /api/categories", handler.ListCategories())
+	mux.Handle("POST /api/categories", handler.CreateCategory())
+	mux.Handle("GET /api/categories/{id}", handler.GetCategoryById())
+	mux.Handle("DELETE /api/categories/{id}", handler.DeleteCategoryById())
+	mux.Handle("PUT /api/categories/{id}", handler.UpdateCategoryById())
+
 	log.Println("running server on port 8080..")
 	err := http.ListenAndServe(":8080", middleware.SimpleLogger(middleware.DefaultHeaders(mux)))
 	if err != nil {
