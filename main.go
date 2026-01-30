@@ -6,6 +6,8 @@ import (
 
 	"github.com/fatahnuram/learn-go-kasir-api/internal/handler"
 	"github.com/fatahnuram/learn-go-kasir-api/internal/middleware"
+	"github.com/fatahnuram/learn-go-kasir-api/internal/repository"
+	"github.com/fatahnuram/learn-go-kasir-api/internal/service"
 )
 
 func main() {
@@ -16,11 +18,14 @@ func main() {
 	mux.Handle("GET /kaithhealth", handler.Healthz()) // Leapcell healthcheck
 
 	// products
-	mux.Handle("GET /api/products", handler.ListProducts())
-	mux.Handle("POST /api/products", handler.CreateProduct())
-	mux.Handle("GET /api/products/{id}", handler.GetProductById())
-	mux.Handle("DELETE /api/products/{id}", handler.DeleteProductById())
-	mux.Handle("PUT /api/products/{id}", handler.UpdateProductById())
+	productRepo := repository.NewProductRepo()
+	productService := service.NewProductService(productRepo)
+	productHandler := handler.NewProductHandler(productService)
+	mux.Handle("GET /api/products", productHandler.ListProducts())
+	mux.Handle("POST /api/products", productHandler.CreateProduct())
+	mux.Handle("GET /api/products/{id}", productHandler.GetProductById())
+	mux.Handle("DELETE /api/products/{id}", productHandler.DeleteProductById())
+	mux.Handle("PUT /api/products/{id}", productHandler.UpdateProductById())
 
 	// categories
 	mux.Handle("GET /api/categories", handler.ListCategories())

@@ -5,159 +5,119 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/fatahnuram/learn-go-kasir-api/internal/helpers"
 	"github.com/fatahnuram/learn-go-kasir-api/internal/model"
+	"github.com/fatahnuram/learn-go-kasir-api/internal/service"
 )
 
-var products = []model.Product{
-	{
-		ID:    1,
-		Name:  "Indomie",
-		Price: 3000,
-		Stock: 3,
-	},
-	{
-		ID:    2,
-		Name:  "Lifeboy",
-		Price: 1500,
-		Stock: 5,
-	},
-	{
-		ID:    3,
-		Name:  "Kacang Garuda",
-		Price: 500,
-		Stock: 4,
-	},
+type ProductHandler struct {
+	service service.ProductService
 }
 
-func ListProducts() http.Handler {
+func NewProductHandler(productService service.ProductService) ProductHandler {
+	return ProductHandler{
+		service: productService,
+	}
+}
+
+func (h ProductHandler) ListProducts() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(products)
+		products := h.service.ListProducts()
+		helpers.RespondJson(w, r, http.StatusOK, products)
 	})
 }
 
-func GetProductById() http.Handler {
+func (h ProductHandler) GetProductById() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		idstring := r.PathValue("id")
 		id, err := strconv.Atoi(idstring)
 		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(
-				map[string]string{
-					"error": "invalid id",
-				},
-			)
+			helpers.RespondJson(w, r, http.StatusBadRequest, map[string]string{
+				"error": "invalid id",
+			})
 			return
 		}
 
-		for _, p := range products {
-			if p.ID == id {
-				w.WriteHeader(http.StatusOK)
-				json.NewEncoder(w).Encode(p)
-				return
-			}
+		p, err := h.service.GetProductById(id)
+		if err != nil {
+			helpers.RespondJson(w, r, http.StatusNotFound, map[string]string{
+				"error": "product not found",
+			})
+			return
 		}
 
-		w.WriteHeader(http.StatusNotFound)
-		json.NewEncoder(w).Encode(map[string]string{
-			"error": "product not found",
-		})
+		helpers.RespondJson(w, r, http.StatusOK, p)
 	})
 }
 
-func CreateProduct() http.Handler {
+func (h ProductHandler) CreateProduct() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var p model.Product
 		err := json.NewDecoder(r.Body).Decode(&p)
 		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(
-				map[string]string{
-					"error": err.Error(),
-				},
-			)
+			helpers.RespondJson(w, r, http.StatusBadRequest, map[string]string{
+				"error": err.Error(),
+			})
 			return
 		}
 
-		p.ID = len(products) + 1
-		products = append(products, p)
-
-		w.WriteHeader(http.StatusCreated)
-		json.NewEncoder(w).Encode(p)
+		created := h.service.CreateProduct(p)
+		helpers.RespondJson(w, r, http.StatusOK, created)
 	})
 }
 
-func DeleteProductById() http.Handler {
+func (h ProductHandler) DeleteProductById() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		idstring := r.PathValue("id")
 		id, err := strconv.Atoi(idstring)
 		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(
-				map[string]string{
-					"error": "invalid id",
-				},
-			)
+			helpers.RespondJson(w, r, http.StatusBadRequest, map[string]string{
+				"error": "invalid id",
+			})
 			return
 		}
 
-		for i, p := range products {
-			if p.ID == id {
-				products = append(products[:i], products[i+1:]...)
-				w.WriteHeader(http.StatusOK)
-				json.NewEncoder(w).Encode(map[string]string{
-					"msg": "product deleted successfully",
-				})
-				return
-			}
+		err = h.service.DeleteProductById(id)
+		if err != nil {
+			helpers.RespondJson(w, r, http.StatusNotFound, map[string]string{
+				"error": err.Error(),
+			})
+			return
 		}
 
-		w.WriteHeader(http.StatusNotFound)
-		json.NewEncoder(w).Encode(map[string]string{
-			"error": "product not found",
+		helpers.RespondJson(w, r, http.StatusOK, map[string]string{
+			"msg": "product deleted successfully",
 		})
 	})
 }
 
-func UpdateProductById() http.Handler {
+func (h ProductHandler) UpdateProductById() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		idstring := r.PathValue("id")
 		id, err := strconv.Atoi(idstring)
 		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(
-				map[string]string{
-					"error": "invalid id",
-				},
-			)
+			helpers.RespondJson(w, r, http.StatusBadRequest, map[string]string{
+				"error": "invalid id",
+			})
 			return
 		}
 
 		var p model.Product
 		err = json.NewDecoder(r.Body).Decode(&p)
 		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(
-				map[string]string{
-					"error": err.Error(),
-				},
-			)
+			helpers.RespondJson(w, r, http.StatusBadRequest, map[string]string{
+				"error": err.Error(),
+			})
 			return
 		}
 
-		for i := range products {
-			if products[i].ID == id {
-				p.ID = id
-				products[i] = p
-				w.WriteHeader(http.StatusOK)
-				json.NewEncoder(w).Encode(p)
-				return
-			}
+		updated, err := h.service.UpdateProductById(id, p)
+		if err != nil {
+			helpers.RespondJson(w, r, http.StatusNotFound, map[string]string{
+				"error": err.Error(),
+			})
+			return
 		}
-
-		w.WriteHeader(http.StatusNotFound)
-		json.NewEncoder(w).Encode(map[string]string{
-			"error": "product not found",
-		})
+		helpers.RespondJson(w, r, http.StatusOK, updated)
 	})
 }
