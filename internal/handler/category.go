@@ -5,161 +5,119 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/fatahnuram/learn-go-kasir-api/internal/helpers"
 	"github.com/fatahnuram/learn-go-kasir-api/internal/model"
+	"github.com/fatahnuram/learn-go-kasir-api/internal/service"
 )
 
-var categories = []model.Category{
-	{
-		ID:          1,
-		Name:        "Sembako",
-		Description: "Semua yang termasuk sembako",
-	},
-	{
-		ID:          2,
-		Name:        "Kebutuhan rumah tangga",
-		Description: "Sabun, deterjen, dll",
-	},
-	{
-		ID:          3,
-		Name:        "Makanan/minuman",
-		Description: "Makanan dan minuman siap konsumsi",
-	},
-	{
-		ID:          4,
-		Name:        "Fashion",
-		Description: "Pakaian dan aksesoris",
-	},
+type CategoryHandler struct {
+	service service.CategoryService
 }
 
-func ListCategories() http.Handler {
+func NewCategoryHandler(categoryService service.CategoryService) CategoryHandler {
+	return CategoryHandler{
+		service: categoryService,
+	}
+}
+
+func (h CategoryHandler) ListCategories() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(categories)
+		categories := h.service.ListCategories()
+		helpers.RespondJson(w, r, http.StatusOK, categories)
 	})
 }
 
-func GetCategoryById() http.Handler {
+func (h CategoryHandler) GetCategoryById() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		idstring := r.PathValue("id")
 		id, err := strconv.Atoi(idstring)
 		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(
-				map[string]string{
-					"error": "invalid id",
-				},
-			)
+			helpers.RespondJson(w, r, http.StatusBadRequest, map[string]string{
+				"error": "invalid id",
+			})
 			return
 		}
 
-		for _, c := range categories {
-			if c.ID == id {
-				w.WriteHeader(http.StatusOK)
-				json.NewEncoder(w).Encode(c)
-				return
-			}
+		c, err := h.service.GetCategoryById(id)
+		if err != nil {
+			helpers.RespondJson(w, r, http.StatusNotFound, map[string]string{
+				"error": "category not found",
+			})
+			return
 		}
 
-		w.WriteHeader(http.StatusNotFound)
-		json.NewEncoder(w).Encode(map[string]string{
-			"error": "category not found",
-		})
+		helpers.RespondJson(w, r, http.StatusOK, c)
 	})
 }
 
-func CreateCategory() http.Handler {
+func (h CategoryHandler) CreateCategory() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var c model.Category
 		err := json.NewDecoder(r.Body).Decode(&c)
 		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(
-				map[string]string{
-					"error": err.Error(),
-				},
-			)
+			helpers.RespondJson(w, r, http.StatusBadRequest, map[string]string{
+				"error": err.Error(),
+			})
 			return
 		}
 
-		c.ID = len(categories) + 1
-		categories = append(categories, c)
-
-		w.WriteHeader(http.StatusCreated)
-		json.NewEncoder(w).Encode(c)
+		created := h.service.CreateCategory(c)
+		helpers.RespondJson(w, r, http.StatusOK, created)
 	})
 }
 
-func DeleteCategoryById() http.Handler {
+func (h CategoryHandler) DeleteCategoryById() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		idstring := r.PathValue("id")
 		id, err := strconv.Atoi(idstring)
 		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(
-				map[string]string{
-					"error": "invalid id",
-				},
-			)
+			helpers.RespondJson(w, r, http.StatusBadRequest, map[string]string{
+				"error": "invalid id",
+			})
 			return
 		}
 
-		for i, c := range categories {
-			if c.ID == id {
-				categories = append(categories[:i], categories[i+1:]...)
-				w.WriteHeader(http.StatusOK)
-				json.NewEncoder(w).Encode(map[string]string{
-					"msg": "category deleted successfully",
-				})
-				return
-			}
+		err = h.service.DeleteCategoryById(id)
+		if err != nil {
+			helpers.RespondJson(w, r, http.StatusNotFound, map[string]string{
+				"error": err.Error(),
+			})
+			return
 		}
 
-		w.WriteHeader(http.StatusNotFound)
-		json.NewEncoder(w).Encode(map[string]string{
-			"error": "category not found",
+		helpers.RespondJson(w, r, http.StatusOK, map[string]string{
+			"msg": "category deleted successfully",
 		})
 	})
 }
 
-func UpdateCategoryById() http.Handler {
+func (h CategoryHandler) UpdateCategoryById() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		idstring := r.PathValue("id")
 		id, err := strconv.Atoi(idstring)
 		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(
-				map[string]string{
-					"error": "invalid id",
-				},
-			)
+			helpers.RespondJson(w, r, http.StatusBadRequest, map[string]string{
+				"error": "invalid id",
+			})
 			return
 		}
 
 		var c model.Category
 		err = json.NewDecoder(r.Body).Decode(&c)
 		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(
-				map[string]string{
-					"error": err.Error(),
-				},
-			)
+			helpers.RespondJson(w, r, http.StatusBadRequest, map[string]string{
+				"error": err.Error(),
+			})
 			return
 		}
 
-		for i := range categories {
-			if categories[i].ID == id {
-				c.ID = id
-				categories[i] = c
-				w.WriteHeader(http.StatusOK)
-				json.NewEncoder(w).Encode(c)
-				return
-			}
+		updated, err := h.service.UpdateCategoryById(id, c)
+		if err != nil {
+			helpers.RespondJson(w, r, http.StatusNotFound, map[string]string{
+				"error": err.Error(),
+			})
+			return
 		}
-
-		w.WriteHeader(http.StatusNotFound)
-		json.NewEncoder(w).Encode(map[string]string{
-			"error": "category not found",
-		})
+		helpers.RespondJson(w, r, http.StatusOK, updated)
 	})
 }

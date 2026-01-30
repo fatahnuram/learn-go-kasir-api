@@ -28,11 +28,14 @@ func main() {
 	mux.Handle("PUT /api/products/{id}", productHandler.UpdateProductById())
 
 	// categories
-	mux.Handle("GET /api/categories", handler.ListCategories())
-	mux.Handle("POST /api/categories", handler.CreateCategory())
-	mux.Handle("GET /api/categories/{id}", handler.GetCategoryById())
-	mux.Handle("DELETE /api/categories/{id}", handler.DeleteCategoryById())
-	mux.Handle("PUT /api/categories/{id}", handler.UpdateCategoryById())
+	categoryRepo := repository.NewCategoryRepo()
+	categoryService := service.NewCategoryService(categoryRepo)
+	categoryHandler := handler.NewCategoryHandler(categoryService)
+	mux.Handle("GET /api/categories", categoryHandler.ListCategories())
+	mux.Handle("POST /api/categories", categoryHandler.CreateCategory())
+	mux.Handle("GET /api/categories/{id}", categoryHandler.GetCategoryById())
+	mux.Handle("DELETE /api/categories/{id}", categoryHandler.DeleteCategoryById())
+	mux.Handle("PUT /api/categories/{id}", categoryHandler.UpdateCategoryById())
 
 	// default route
 	mux.Handle("/", handler.DefaultHandler())
