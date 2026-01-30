@@ -13,6 +13,7 @@ func main() {
 
 	// healthcheck
 	mux.Handle("GET /healthz", handler.Healthz())
+	mux.Handle("GET /kaithhealth", handler.Healthz()) // Leapcell healthcheck
 
 	// products
 	mux.Handle("GET /api/products", handler.ListProducts())
