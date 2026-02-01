@@ -127,13 +127,16 @@ func (h ProductHandler) UpdateProductById() http.Handler {
 			return
 		}
 
-		updated, err := h.service.UpdateProductById(id, p)
+		err = h.service.UpdateProductById(id, &p)
 		if err != nil {
 			helpers.RespondJson(w, r, http.StatusNotFound, map[string]string{
 				"error": err.Error(),
 			})
 			return
 		}
-		helpers.RespondJson(w, r, http.StatusOK, updated)
+
+		helpers.RespondJson(w, r, http.StatusOK, map[string]string{
+			"msg": "product updated",
+		})
 	})
 }

@@ -97,14 +97,21 @@ func (r ProductRepo) DeleteProductById(id int) error {
 	return nil
 }
 
-func (r ProductRepo) UpdateProductById(id int, p model.Product) (model.Product, error) {
-	for i := range products {
-		if products[i].ID == id {
-			p.ID = id
-			products[i] = p
-			return p, nil
-		}
+func (r ProductRepo) UpdateProductById(id int, p *model.Product) error {
+	q := `UPDATE products SET name = $1, price = $2, stock = $3 WHERE id = $4`
+	result, err := r.Db.Exec(q, p.Name, p.Price, p.Stock, id)
+	if err != nil {
+		return err
 	}
 
-	return model.Product{}, errors.New("not found")
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rows == 0 {
+		return errors.New("not found")
+	}
+
+	return nil
 }
