@@ -2,14 +2,21 @@ package service
 
 import (
 	"github.com/fatahnuram/learn-go-kasir-api/internal/model"
-	"github.com/fatahnuram/learn-go-kasir-api/internal/repository"
 )
 
 type CategoryService struct {
-	repo repository.CategoryRepo
+	repo CategoryRepoI
 }
 
-func NewCategoryService(categoryRepo repository.CategoryRepo) CategoryService {
+type CategoryRepoI interface {
+	GetAllCategories() ([]model.Category, error)
+	GetCategoryById(id int) (*model.Category, error)
+	CreateCategory(c *model.Category) error
+	DeleteCategoryById(id int) error
+	UpdateCategoryById(id int, c *model.Category) error
+}
+
+func NewCategoryService(categoryRepo CategoryRepoI) CategoryService {
 	return CategoryService{
 		repo: categoryRepo,
 	}
