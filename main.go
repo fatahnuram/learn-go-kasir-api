@@ -4,6 +4,8 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/fatahnuram/learn-go-kasir-api/internal/config"
+	"github.com/fatahnuram/learn-go-kasir-api/internal/db"
 	"github.com/fatahnuram/learn-go-kasir-api/internal/handler"
 	"github.com/fatahnuram/learn-go-kasir-api/internal/middleware"
 	"github.com/fatahnuram/learn-go-kasir-api/internal/repository"
@@ -11,6 +13,13 @@ import (
 )
 
 func main() {
+	conf := config.Init()
+	db, err := db.InitDB(conf.DBConn)
+	if err != nil {
+		log.Fatal("cannot connect to database:", err)
+	}
+	defer db.Close()
+
 	mux := http.NewServeMux()
 
 	// healthcheck
@@ -18,7 +27,7 @@ func main() {
 	mux.Handle("GET /kaithhealth", handler.Healthz()) // Leapcell healthcheck
 
 	// products
-	productRepo := repository.NewProductRepo()
+	productRepo := repository.NewProductRepo(db)
 	productService := service.NewProductService(productRepo)
 	productHandler := handler.NewProductHandler(productService)
 	mux.Handle("GET /api/products", productHandler.ListProducts())
@@ -28,7 +37,7 @@ func main() {
 	mux.Handle("PUT /api/products/{id}", productHandler.UpdateProductById())
 
 	// categories
-	categoryRepo := repository.NewCategoryRepo()
+	categoryRepo := repository.NewCategoryRepo(db)
 	categoryService := service.NewCategoryService(categoryRepo)
 	categoryHandler := handler.NewCategoryHandler(categoryService)
 	mux.Handle("GET /api/categories", categoryHandler.ListCategories())
@@ -40,8 +49,9 @@ func main() {
 	// default route
 	mux.Handle("/", handler.DefaultHandler())
 
-	log.Println("running server on port 8080..")
-	err := http.ListenAndServe(":8080", middleware.SimpleLogger(middleware.DefaultHeaders(mux)))
+	addr := "0.0.0.0:" + conf.Port
+	log.Println("running server on", addr)
+	err = http.ListenAndServe(addr, middleware.SimpleLogger(middleware.DefaultHeaders(mux)))
 	if err != nil {
 		log.Println("failed to run server:", err)
 	}

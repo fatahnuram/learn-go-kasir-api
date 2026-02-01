@@ -1,15 +1,20 @@
 package repository
 
 import (
+	"database/sql"
 	"errors"
 
 	"github.com/fatahnuram/learn-go-kasir-api/internal/model"
 )
 
-type CategoryRepo struct{}
+type CategoryRepo struct {
+	Db *sql.DB
+}
 
-func NewCategoryRepo() CategoryRepo {
-	return CategoryRepo{}
+func NewCategoryRepo(db *sql.DB) CategoryRepo {
+	return CategoryRepo{
+		Db: db,
+	}
 }
 
 // example static data

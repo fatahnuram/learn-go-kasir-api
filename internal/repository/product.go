@@ -1,15 +1,20 @@
 package repository
 
 import (
+	"database/sql"
 	"errors"
 
 	"github.com/fatahnuram/learn-go-kasir-api/internal/model"
 )
 
-type ProductRepo struct{}
+type ProductRepo struct {
+	Db *sql.DB
+}
 
-func NewProductRepo() ProductRepo {
-	return ProductRepo{}
+func NewProductRepo(db *sql.DB) ProductRepo {
+	return ProductRepo{
+		Db: db,
+	}
 }
 
 // example static data
@@ -34,8 +39,22 @@ var products = []model.Product{
 	},
 }
 
-func (r ProductRepo) GetAllProducts() []model.Product {
-	return products
+func (r ProductRepo) GetAllProducts() ([]model.Product, error) {
+	q := `SELECT id, name, price, stock FROM products`
+	rows, err := r.Db.Query(q)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	products := make([]model.Product, 0)
+	for rows.Next() {
+		var p model.Product
+		err = rows.Scan(&p.ID, &p.Name, &p.Price, &p.Stock)
+		products = append(products, p)
+	}
+
+	return products, nil
 }
 
 func (r ProductRepo) GetProductById(id int) (model.Product, error) {

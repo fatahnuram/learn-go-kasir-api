@@ -15,7 +15,7 @@ func NewProductService(productRepo repository.ProductRepo) ProductService {
 	}
 }
 
-func (s ProductService) ListProducts() []model.Product {
+func (s ProductService) ListProducts() ([]model.Product, error) {
 	return s.repo.GetAllProducts()
 }
 

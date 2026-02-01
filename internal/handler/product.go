@@ -22,7 +22,14 @@ func NewProductHandler(productService service.ProductService) ProductHandler {
 
 func (h ProductHandler) ListProducts() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		products := h.service.ListProducts()
+		products, err := h.service.ListProducts()
+		if err != nil {
+			helpers.RespondJson(w, r, http.StatusInternalServerError, map[string]string{
+				"error": err.Error(),
+			})
+			return
+		}
+
 		helpers.RespondJson(w, r, http.StatusOK, products)
 	})
 }
