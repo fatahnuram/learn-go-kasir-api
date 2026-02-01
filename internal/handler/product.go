@@ -48,7 +48,7 @@ func (h ProductHandler) GetProductById() http.Handler {
 		p, err := h.service.GetProductById(id)
 		if err != nil {
 			helpers.RespondJson(w, r, http.StatusNotFound, map[string]string{
-				"error": "product not found",
+				"error": err.Error(),
 			})
 			return
 		}

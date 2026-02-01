@@ -18,7 +18,7 @@ func NewProductRepo(db *sql.DB) ProductRepo {
 }
 
 func (r ProductRepo) GetAllProducts() ([]model.Product, error) {
-	q := `SELECT p.id, p.name, p.price, p.stock, c.id, c.name AS category
+	q := `SELECT p.id, p.name, p.price, p.stock, c.id AS cid, c.name AS category
 	FROM products p
 	LEFT JOIN categories c ON p.category_id = c.id`
 	rows, err := r.Db.Query(q)
@@ -38,10 +38,13 @@ func (r ProductRepo) GetAllProducts() ([]model.Product, error) {
 }
 
 func (r ProductRepo) GetProductById(id int) (*model.Product, error) {
-	q := `SELECT id, name, price, stock FROM products WHERE id = $1`
+	q := `SELECT p.id, p.name, p.price, p.stock, c.id, c.name AS category
+	FROM products p
+	LEFT JOIN categories c ON p.category_id = c.id
+	WHERE p.id = $1`
 
 	var p model.Product
-	err := r.Db.QueryRow(q, id).Scan(&p.ID, &p.Name, &p.Price, &p.Stock)
+	err := r.Db.QueryRow(q, id).Scan(&p.ID, &p.Name, &p.Price, &p.Stock, &p.CategoryID, &p.Category)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, errors.New("not found")
