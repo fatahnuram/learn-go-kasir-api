@@ -9,7 +9,7 @@ import (
 
 type Config struct {
 	Port   string `mapstructure:"PORT"`
-	DBConn string `mapstructure:DB_CONN`
+	DBConn string `mapstructure:"DB_CONN"`
 }
 
 func Init() Config {
