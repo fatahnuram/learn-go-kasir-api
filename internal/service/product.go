@@ -19,11 +19,11 @@ func (s ProductService) ListProducts() ([]model.Product, error) {
 	return s.repo.GetAllProducts()
 }
 
-func (s ProductService) GetProductById(id int) (model.Product, error) {
+func (s ProductService) GetProductById(id int) (*model.Product, error) {
 	return s.repo.GetProductById(id)
 }
 
-func (s ProductService) CreateProduct(p model.Product) model.Product {
+func (s ProductService) CreateProduct(p *model.Product) error {
 	return s.repo.CreateProduct(p)
 }
 

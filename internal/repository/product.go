@@ -57,20 +57,25 @@ func (r ProductRepo) GetAllProducts() ([]model.Product, error) {
 	return products, nil
 }
 
-func (r ProductRepo) GetProductById(id int) (model.Product, error) {
-	for _, p := range products {
-		if p.ID == id {
-			return p, nil
+func (r ProductRepo) GetProductById(id int) (*model.Product, error) {
+	q := `SELECT id, name, price, stock FROM products WHERE id = $1`
+
+	var p model.Product
+	err := r.Db.QueryRow(q, id).Scan(&p.ID, &p.Name, &p.Price, &p.Stock)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, errors.New("not found")
 		}
+		return nil, err
 	}
 
-	return model.Product{}, errors.New("not found")
+	return &p, err
 }
 
-func (r ProductRepo) CreateProduct(p model.Product) model.Product {
-	p.ID = len(products) + 1
-	products = append(products, p)
-	return p
+func (r ProductRepo) CreateProduct(p *model.Product) error {
+	q := `INSERT INTO products (name, price, stock) VALUES ($1, $2, $3) RETURNING id`
+	err := r.Db.QueryRow(q, p.Name, p.Price, p.Stock).Scan(&p.ID)
+	return err
 }
 
 func (r ProductRepo) DeleteProductById(id int) error {

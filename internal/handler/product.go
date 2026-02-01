@@ -68,8 +68,17 @@ func (h ProductHandler) CreateProduct() http.Handler {
 			return
 		}
 
-		created := h.service.CreateProduct(p)
-		helpers.RespondJson(w, r, http.StatusOK, created)
+		err = h.service.CreateProduct(&p)
+		if err != nil {
+			helpers.RespondJson(w, r, http.StatusInternalServerError, map[string]string{
+				"error": err.Error(),
+			})
+			return
+		}
+
+		helpers.RespondJson(w, r, http.StatusCreated, map[string]string{
+			"msg": "product created",
+		})
 	})
 }
 
