@@ -17,28 +17,6 @@ func NewProductRepo(db *sql.DB) ProductRepo {
 	}
 }
 
-// example static data
-var products = []model.Product{
-	{
-		ID:    1,
-		Name:  "Indomie",
-		Price: 3000,
-		Stock: 3,
-	},
-	{
-		ID:    2,
-		Name:  "Lifeboy",
-		Price: 1500,
-		Stock: 5,
-	},
-	{
-		ID:    3,
-		Name:  "Kacang Garuda",
-		Price: 500,
-		Stock: 4,
-	},
-}
-
 func (r ProductRepo) GetAllProducts() ([]model.Product, error) {
 	q := `SELECT id, name, price, stock FROM products`
 	rows, err := r.Db.Query(q)

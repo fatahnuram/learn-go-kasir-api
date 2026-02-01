@@ -22,7 +22,14 @@ func NewCategoryHandler(categoryService service.CategoryService) CategoryHandler
 
 func (h CategoryHandler) ListCategories() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		categories := h.service.ListCategories()
+		categories, err := h.service.ListCategories()
+		if err != nil {
+			helpers.RespondJson(w, r, http.StatusInternalServerError, map[string]string{
+				"error": err.Error(),
+			})
+			return
+		}
+
 		helpers.RespondJson(w, r, http.StatusOK, categories)
 	})
 }
@@ -61,8 +68,17 @@ func (h CategoryHandler) CreateCategory() http.Handler {
 			return
 		}
 
-		created := h.service.CreateCategory(c)
-		helpers.RespondJson(w, r, http.StatusOK, created)
+		err = h.service.CreateCategory(&c)
+		if err != nil {
+			helpers.RespondJson(w, r, http.StatusInternalServerError, map[string]string{
+				"error": err.Error(),
+			})
+			return
+		}
+
+		helpers.RespondJson(w, r, http.StatusCreated, map[string]string{
+			"msg": "category created",
+		})
 	})
 }
 
@@ -111,13 +127,16 @@ func (h CategoryHandler) UpdateCategoryById() http.Handler {
 			return
 		}
 
-		updated, err := h.service.UpdateCategoryById(id, c)
+		err = h.service.UpdateCategoryById(id, &c)
 		if err != nil {
 			helpers.RespondJson(w, r, http.StatusNotFound, map[string]string{
 				"error": err.Error(),
 			})
 			return
 		}
-		helpers.RespondJson(w, r, http.StatusOK, updated)
+
+		helpers.RespondJson(w, r, http.StatusOK, map[string]string{
+			"msg": "category updated",
+		})
 	})
 }
