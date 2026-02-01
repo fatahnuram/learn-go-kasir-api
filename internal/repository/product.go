@@ -79,14 +79,22 @@ func (r ProductRepo) CreateProduct(p *model.Product) error {
 }
 
 func (r ProductRepo) DeleteProductById(id int) error {
-	for i, p := range products {
-		if p.ID == id {
-			products = append(products[:i], products[i+1:]...)
-			return nil
-		}
+	q := `DELETE FROM products WHERE id = $1`
+	result, err := r.Db.Exec(q, id)
+	if err != nil {
+		return err
 	}
 
-	return errors.New("not found")
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rows == 0 {
+		return errors.New("not found")
+	}
+
+	return nil
 }
 
 func (r ProductRepo) UpdateProductById(id int, p model.Product) (model.Product, error) {
