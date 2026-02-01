@@ -18,7 +18,9 @@ func NewProductRepo(db *sql.DB) ProductRepo {
 }
 
 func (r ProductRepo) GetAllProducts() ([]model.Product, error) {
-	q := `SELECT id, name, price, stock FROM products`
+	q := `SELECT p.id, p.name, p.price, p.stock, c.id, c.name AS category
+	FROM products p
+	LEFT JOIN categories c ON p.category_id = c.id`
 	rows, err := r.Db.Query(q)
 	if err != nil {
 		return nil, err
@@ -28,7 +30,7 @@ func (r ProductRepo) GetAllProducts() ([]model.Product, error) {
 	products := make([]model.Product, 0)
 	for rows.Next() {
 		var p model.Product
-		err = rows.Scan(&p.ID, &p.Name, &p.Price, &p.Stock)
+		err = rows.Scan(&p.ID, &p.Name, &p.Price, &p.Stock, &p.CategoryID, &p.Category)
 		products = append(products, p)
 	}
 
