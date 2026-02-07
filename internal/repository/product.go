@@ -17,11 +17,18 @@ func NewProductRepo(db *sql.DB) ProductRepo {
 	}
 }
 
-func (r ProductRepo) GetAllProducts() ([]model.Product, error) {
+func (r ProductRepo) GetAllProducts(filtername string) ([]model.Product, error) {
 	q := `SELECT p.id, p.name, p.price, p.stock, c.id AS cid, c.name AS category
 	FROM products p
 	LEFT JOIN categories c ON p.category_id = c.id`
-	rows, err := r.Db.Query(q)
+
+	var args []interface{}
+	if filtername != "" {
+		q += " WHERE p.name ILIKE $1"
+		args = append(args, "%"+filtername+"%")
+	}
+
+	rows, err := r.Db.Query(q, args...)
 	if err != nil {
 		return nil, err
 	}
