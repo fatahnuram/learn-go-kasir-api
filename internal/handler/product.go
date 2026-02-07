@@ -22,7 +22,8 @@ func NewProductHandler(productService service.ProductService) ProductHandler {
 
 func (h ProductHandler) ListProducts() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		products, err := h.service.ListProducts()
+		searchq := r.URL.Query().Get("name")
+		products, err := h.service.ListProducts(searchq)
 		if err != nil {
 			helpers.RespondJson(w, r, http.StatusInternalServerError, map[string]string{
 				"error": err.Error(),

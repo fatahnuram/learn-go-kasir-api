@@ -15,8 +15,8 @@ func NewProductService(productRepo repository.ProductRepo) ProductService {
 	}
 }
 
-func (s ProductService) ListProducts() ([]model.Product, error) {
-	return s.repo.GetAllProducts()
+func (s ProductService) ListProducts(filtername string) ([]model.Product, error) {
+	return s.repo.GetAllProducts(filtername)
 }
 
 func (s ProductService) GetProductById(id int) (*model.Product, error) {
