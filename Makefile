@@ -16,13 +16,13 @@ test:
 .PHONY: build
 # Build binary
 build:
-	CGO_ENABLED=0 go build
+	CGO_ENABLED=0 go build -o myappbin
 
 
 .PHONY: start
 # Build and run service
 start: build
-	./learn-go-kasir-api
+	./myappbin
 
 
 .PHONY: run
