@@ -36,6 +36,12 @@ func main() {
 	mux.Handle("DELETE /api/products/{id}", productHandler.DeleteProductById())
 	mux.Handle("PUT /api/products/{id}", productHandler.UpdateProductById())
 
+	// checkout or transactions
+	trxRepo := repository.NewTransactionRepository(db)
+	trxService := service.NewTransactionService(trxRepo)
+	trxHandler := handler.NewTransactionHandler(trxService)
+	mux.Handle("POST /api/checkout", trxHandler.HandleCheckout())
+
 	// categories
 	categoryRepo := repository.NewCategoryRepo(db)
 	categoryService := service.NewCategoryService(categoryRepo)
