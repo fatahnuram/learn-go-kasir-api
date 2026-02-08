@@ -30,6 +30,13 @@ func (h *TransactionHandler) HandleCheckout() http.Handler {
 			return
 		}
 
+		if len(creq.Items) == 0 {
+			helpers.RespondJson(w, r, http.StatusBadRequest, map[string]string{
+				"error": "invalid payload",
+			})
+			return
+		}
+
 		transaction, err := h.service.Checkout(creq.Items)
 		if err != nil {
 			helpers.RespondJson(w, r, http.StatusInternalServerError, map[string]string{

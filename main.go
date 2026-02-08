@@ -52,6 +52,13 @@ func main() {
 	mux.Handle("DELETE /api/categories/{id}", categoryHandler.DeleteCategoryById())
 	mux.Handle("PUT /api/categories/{id}", categoryHandler.UpdateCategoryById())
 
+	// reports
+	reportRepo := repository.NewReportRepository(db)
+	reportService := service.NewReportService(reportRepo)
+	reportHandler := handler.NewReportHandler(reportService)
+	mux.Handle("GET /api/report/hari-ini", reportHandler.GetReportToday())
+	mux.Handle("GET /api/report", reportHandler.GetReportByTimeRange())
+
 	// default route
 	mux.Handle("/", handler.DefaultHandler())
 
