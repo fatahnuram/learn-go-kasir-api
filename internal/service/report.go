@@ -46,7 +46,7 @@ func (s ReportService) GetReportToday() (*dto.ReportResp, error) {
 		23,
 		59,
 		59,
-		999999,
+		999999999,
 		wib,
 	)
 
@@ -87,7 +87,7 @@ func (s ReportService) GetReportByTimeRange(start, end string) (*dto.ReportResp,
 		23,
 		59,
 		59,
-		999999,
+		999999999,
 		wib,
 	)
 

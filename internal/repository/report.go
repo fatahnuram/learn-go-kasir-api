@@ -53,7 +53,7 @@ func (r ReportRepository) GetReportByTimeRange(start, end time.Time) (*dto.Repor
 		}
 
 		// flatten products to map
-		ps, ok := pmap[e.ID]
+		_, ok = pmap[e.ID]
 		if !ok {
 			// if not exist in map, assign it
 			pmap[e.ID] = &dto.ProductSales{
@@ -63,7 +63,7 @@ func (r ReportRepository) GetReportByTimeRange(start, end time.Time) (*dto.Repor
 			}
 		} else {
 			// if exist in map, increment quantity
-			pmap[e.ID].Quantity += ps.Quantity
+			pmap[e.ID].Quantity += e.Quantity
 		}
 	}
 
