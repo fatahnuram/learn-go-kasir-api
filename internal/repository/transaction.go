@@ -3,7 +3,6 @@ package repository
 import (
 	"database/sql"
 	"fmt"
-	"log"
 	"strings"
 
 	"github.com/fatahnuram/learn-go-kasir-api/internal/dto"
@@ -74,18 +73,14 @@ func (r *TransactionRepository) Checkout(items []dto.CheckoutItem) (*model.Trans
 
 	// bulk update mentioned products to avoid n+1 query
 	bulkUpdateStockQuery := `UPDATE products AS p
-	SET stock = stock - v.qty
+	SET stock = stock - v.qty::bigint
 	FROM (VALUES %s) AS v(id, qty)
-	WHERE p.id = v.id`
-	log.Printf("result query: %#v", fmt.Sprintf(bulkUpdateStockQuery, strings.Join(bulkUpdatePlaceholder, ",")))
-	log.Printf("values query: %#v", bulkUpdateValues)
-	log.Println("before")
+	WHERE p.id = v.id::bigint`
 	_, err = tx.Exec(fmt.Sprintf(bulkUpdateStockQuery, strings.Join(bulkUpdatePlaceholder, ",")), bulkUpdateValues...)
 	if err != nil {
 		return nil, err
 	}
 
-	log.Println("after")
 	var transactionId int
 	err = tx.QueryRow(`INSERT INTO transactions (total_amount) VALUES ($1) RETURNING id`, total).Scan(&transactionId)
 	if err != nil {
