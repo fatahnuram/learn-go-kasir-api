@@ -26,6 +26,20 @@ func (r *TransactionRepository) Checkout(items []dto.CheckoutItem) (*model.Trans
 	}
 	defer tx.Rollback()
 
+	// getSelectedProductsQuery := `
+	// SELECT id, name, price, stock
+	// FROM products
+	// WHERE id IN `
+
+	// createTrxDetailsQuery := `
+	// INSERT INTO transaction_details (transaction_id, product_id, quantity, subtotal)
+	// VALUES `
+
+	// updateStockQuery := `
+	// UPDATE products
+	// SET stock = $1
+	// WHERE id = $2`
+
 	total := 0
 	details := make([]model.TransactionDetails, 0)
 
