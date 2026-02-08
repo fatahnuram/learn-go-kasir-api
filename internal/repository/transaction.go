@@ -27,10 +27,6 @@ func (r *TransactionRepository) Checkout(items []dto.CheckoutItem) (*model.Trans
 	}
 	defer tx.Rollback()
 
-	// createTrxDetailsQuery := `
-	// INSERT INTO transaction_details (transaction_id, product_id, quantity, subtotal)
-	// VALUES `
-
 	// fetch related products then process programmatically to avoid n+1 query
 	products, err := r.fetchSelectedProductsToMap(items)
 	if err != nil {
@@ -38,7 +34,7 @@ func (r *TransactionRepository) Checkout(items []dto.CheckoutItem) (*model.Trans
 	}
 
 	total := 0
-	details := make([]model.TransactionDetails, 0)
+	details := make([]model.TransactionDetails, len(items))
 	// to hold bulk update product stock
 	bulkUpdatePlaceholder := make([]string, len(items)) // format: (id,qty), (id,qty), ...
 	bulkUpdateValues := make([]interface{}, 2*len(items))
@@ -63,12 +59,12 @@ func (r *TransactionRepository) Checkout(items []dto.CheckoutItem) (*model.Trans
 		bulkUpdateValues[i*2] = item.ProductID
 		bulkUpdateValues[i*2+1] = item.Qty
 
-		details = append(details, model.TransactionDetails{
+		details[i] = model.TransactionDetails{
 			ProductID:   item.ProductID,
 			ProductName: p.Name,
 			Qty:         item.Qty,
 			Subtotal:    subtotal,
-		})
+		}
 	}
 
 	// bulk update mentioned products to avoid n+1 query
@@ -87,15 +83,32 @@ func (r *TransactionRepository) Checkout(items []dto.CheckoutItem) (*model.Trans
 		return nil, err
 	}
 
+	// to hold bulk insert trx details
+	bulkInsertPlaceholder := make([]string, len(items)) // format: (trxid, productid, qty, subtotal), ...
+	bulkInsertValues := make([]interface{}, 4*len(items))
 	for i := range details {
-		details[i].TransactionID = transactionId
-		_, err = tx.Exec(
-			`INSERT INTO transaction_details (transaction_id, product_id, quantity, subtotal) VALUES ($1, $2, $3, $4)`,
-			transactionId, details[i].ProductID, details[i].Qty, details[i].Subtotal,
-		)
+		bulkInsertPlaceholder[i] = fmt.Sprintf("($%d,$%d,$%d,$%d)", i*4+1, i*4+2, i*4+3, i*4+4)
+		bulkInsertValues[i*4] = transactionId
+		bulkInsertValues[i*4+1] = details[i].ProductID
+		bulkInsertValues[i*4+2] = details[i].Qty
+		bulkInsertValues[i*4+3] = details[i].Subtotal
+	}
+
+	// bulk insert trx details
+	createTrxDetailsQuery := `INSERT INTO transaction_details (transaction_id, product_id, quantity, subtotal)
+	VALUES %s RETURNING id`
+	rows, err := tx.Query(fmt.Sprintf(createTrxDetailsQuery, strings.Join(bulkInsertPlaceholder, ",")), bulkInsertValues...)
+	if err != nil {
+		return nil, err
+	}
+
+	detailsindex := 0
+	for rows.Next() {
+		err = rows.Scan(&details[detailsindex].ID)
 		if err != nil {
 			return nil, err
 		}
+		detailsindex++
 	}
 
 	if err = tx.Commit(); err != nil {
