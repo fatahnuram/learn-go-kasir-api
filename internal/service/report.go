@@ -70,13 +70,10 @@ func (s ReportService) GetReportByTimeRange(start, end string) (*dto.ReportResp,
 		return nil, err
 	}
 
-	startwib := starttime.In(wib)
-	endwib := endtime.In(wib)
-
 	starttz := time.Date(
-		startwib.Year(),
-		startwib.Month(),
-		startwib.Day(),
+		starttime.Year(),
+		starttime.Month(),
+		starttime.Day(),
 		0,
 		0,
 		0,
@@ -84,9 +81,9 @@ func (s ReportService) GetReportByTimeRange(start, end string) (*dto.ReportResp,
 		wib,
 	)
 	endtz := time.Date(
-		endwib.Year(),
-		endwib.Month(),
-		endwib.Day(),
+		endtime.Year(),
+		endtime.Month(),
+		endtime.Day(),
 		23,
 		59,
 		59,
