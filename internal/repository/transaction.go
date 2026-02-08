@@ -3,6 +3,7 @@ package repository
 import (
 	"database/sql"
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/fatahnuram/learn-go-kasir-api/internal/dto"
@@ -31,11 +32,6 @@ func (r *TransactionRepository) Checkout(items []dto.CheckoutItem) (*model.Trans
 	// INSERT INTO transaction_details (transaction_id, product_id, quantity, subtotal)
 	// VALUES `
 
-	// updateStockQuery := `
-	// UPDATE products
-	// SET stock = $1
-	// WHERE id = $2`
-
 	// fetch related products then process programmatically to avoid n+1 query
 	products, err := r.fetchSelectedProductsToMap(items)
 	if err != nil {
@@ -44,14 +40,18 @@ func (r *TransactionRepository) Checkout(items []dto.CheckoutItem) (*model.Trans
 
 	total := 0
 	details := make([]model.TransactionDetails, 0)
+	// to hold bulk update product stock
+	bulkUpdatePlaceholder := make([]string, len(items)) // format: (id,qty), (id,qty), ...
+	bulkUpdateValues := make([]interface{}, 2*len(items))
 
-	for _, item := range items {
+	for i, item := range items {
 		p, ok := products[item.ProductID]
 		if !ok {
 			// not ok means product not found
 			return nil, fmt.Errorf("product not found, ID: %d", item.ProductID)
 		}
 
+		// check stock availability
 		if p.Stock < item.Qty {
 			return nil, fmt.Errorf("insufficient stock, product ID: %d, want: %d, have: %d", item.ProductID, item.Qty, p.Stock)
 		}
@@ -59,10 +59,10 @@ func (r *TransactionRepository) Checkout(items []dto.CheckoutItem) (*model.Trans
 		subtotal := p.Price * item.Qty
 		total += subtotal
 
-		_, err = tx.Exec(`UPDATE products SET stock = stock - $1 WHERE id = $2`, item.Qty, item.ProductID)
-		if err != nil {
-			return nil, err
-		}
+		// bulk update product stock
+		bulkUpdatePlaceholder[i] = fmt.Sprintf("($%d,$%d)", i*2+1, i*2+2)
+		bulkUpdateValues[i*2] = item.ProductID
+		bulkUpdateValues[i*2+1] = item.Qty
 
 		details = append(details, model.TransactionDetails{
 			ProductID:   item.ProductID,
@@ -72,6 +72,20 @@ func (r *TransactionRepository) Checkout(items []dto.CheckoutItem) (*model.Trans
 		})
 	}
 
+	// bulk update mentioned products to avoid n+1 query
+	bulkUpdateStockQuery := `UPDATE products AS p
+	SET stock = stock - v.qty
+	FROM (VALUES %s) AS v(id, qty)
+	WHERE p.id = v.id`
+	log.Printf("result query: %#v", fmt.Sprintf(bulkUpdateStockQuery, strings.Join(bulkUpdatePlaceholder, ",")))
+	log.Printf("values query: %#v", bulkUpdateValues)
+	log.Println("before")
+	_, err = tx.Exec(fmt.Sprintf(bulkUpdateStockQuery, strings.Join(bulkUpdatePlaceholder, ",")), bulkUpdateValues...)
+	if err != nil {
+		return nil, err
+	}
+
+	log.Println("after")
 	var transactionId int
 	err = tx.QueryRow(`INSERT INTO transactions (total_amount) VALUES ($1) RETURNING id`, total).Scan(&transactionId)
 	if err != nil {
